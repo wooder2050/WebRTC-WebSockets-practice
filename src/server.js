@@ -29,16 +29,25 @@ function onSocketClose() {
   console.log('Disconnected from Browser ❌');
 }
 
-function onSocketMessage(message) {
-  const translatedMessageData = ConvertBufferToStringFormat(message);
-  console.log(translatedMessageData);
-}
+const sockets = [];
 
 wss.on('connection', (socket) => {
+  sockets.push(socket);
+  socket['nickname'] = 'Anon';
   console.log('Connected to Browser ✅');
   socket.on('close', onSocketClose);
-  socket.on('message', onSocketMessage);
-  socket.send('hello!!');
+  socket.on('message', (msg) => {
+    const message = JSON.parse(msg);
+    switch (message.type) {
+      case 'new_message':
+        sockets.forEach((aSocket) =>
+          aSocket.send(`${socket.nickname}: ${message.payload}`)
+        );
+      case 'nickname':
+        console.log(message.payload);
+        socket['nickname'] = message.payload;
+    }
+  });
 });
 
 server.listen(3000, handleListen);
